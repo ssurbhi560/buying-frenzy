@@ -1,5 +1,6 @@
 from app import app
 
+
 @app.route("/")
 def home():
-    return "Backend API for a restaurant."
+    return "Backend Service for a food delivery platform."

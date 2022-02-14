@@ -1,10 +1,10 @@
-from calendar import weekday
 from datetime import time
+import datetime
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.models import Dish, Restaurant, Schedule
+from app.models import Dish, PurchaseOrder, Schedule
 from tests.utils import commit
 
 
@@ -70,3 +70,22 @@ def test_dish_model_for_invalid_price(db, restaurant):
     with pytest.raises(IntegrityError):
         commit(db, dish)
 
+
+def test_user_model(user):
+
+    assert user.name == "test"
+    assert user.cash_balance == 00
+
+
+def test_purchase_order_model_for_invalid_transaction_amount(db, restaurant, user):
+
+    purchase = PurchaseOrder(
+        restaurant_id=restaurant.id,
+        user_id=user.id,
+        transaction_amount=-100000,
+        dish_name="test",
+        restaurant_name=restaurant.name,
+    )
+
+    with pytest.raises(IntegrityError):
+        commit(db, purchase)

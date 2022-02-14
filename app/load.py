@@ -64,7 +64,7 @@ def week_iter(start, end):
     return r
 
 
-def parse_shcedule(hours):
+def parse_schedule(hours):
     """Return a dictionary with weekday as key and Schedule for each
     day stored as tuple (opens_at, closes_at, overnight) as value
 
@@ -101,7 +101,9 @@ def parse_shcedule(hours):
     days = [hr.strip() for hr in hours.split("/")]
     for day in days:
         d = day.split()
+
         # Last 5 values of 'd' will always have the time range.
+
         time_string = "".join(d[-5:])
         opens_at, closes_at, overnight = parse_time_span(time_string)
 
@@ -112,8 +114,7 @@ def parse_shcedule(hours):
                 add_range(group)
             else:
                 add_single(group.strip())
-
-            return schedule
+    return schedule
 
 
 def add_users(data):
@@ -143,7 +144,7 @@ def add_users(data):
         ]
 
         db.session.bulk_save_objects(purchase_order_db)
-        db.session.commit()
+    db.session.commit()
 
 
 def add_restaurants(data):
@@ -167,7 +168,7 @@ def add_restaurants(data):
 
         db.session.bulk_save_objects(menu_db)
 
-        schedule = parse_shcedule(rest["openingHours"])
+        schedule = parse_schedule(rest["openingHours"])
         schedule_db = [
             Schedule(
                 weekday=weekday,

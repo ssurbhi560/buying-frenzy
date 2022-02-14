@@ -1,5 +1,5 @@
-from datetime import time
 import datetime
+from datetime import time
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -8,7 +8,7 @@ from app.models import Dish, PurchaseOrder, Schedule
 from tests.utils import commit
 
 
-def test_restaurant_model(db, restaurant):
+def test_restaurant_model(restaurant):
 
     assert restaurant.name == "test"
     assert restaurant.cash_balance == 000
@@ -80,7 +80,6 @@ def test_user_model(user):
 def test_purchase_order_model_for_invalid_transaction_amount(db, restaurant, user):
 
     purchase = PurchaseOrder(
-        restaurant_id=restaurant.id,
         user_id=user.id,
         transaction_amount=-100000,
         dish_name="test",

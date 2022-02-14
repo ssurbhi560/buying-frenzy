@@ -7,7 +7,7 @@ from tests.utils import commit
 
 
 @pytest.fixture
-def app(request):
+def app():
     flaskapp.config.from_object("config.TestConfig")
     flaskapp.testing = True
     flaskapp.app_context().push()

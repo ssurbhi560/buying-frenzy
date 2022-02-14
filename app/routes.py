@@ -11,7 +11,5 @@ def home():
 
 app.add_url_rule(
     "/graphql",
-    view_func=GraphQLView.as_view(
-        "graphql", schema=SCHEMA, graphiql=True  # for having the GraphiQL interface
-    ),
+    view_func=GraphQLView.as_view("graphql", schema=SCHEMA, graphiql=True),
 )

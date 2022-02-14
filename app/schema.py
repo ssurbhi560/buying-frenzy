@@ -11,6 +11,12 @@ class Restaurant(SQLAlchemyObjectType):
         interfaces = (relay.Node,)
 
 
+class User(SQLAlchemyObjectType):
+    class Meta:
+        model = models.User
+        interfaces = (relay.Node,)
+
+
 class Query(graphene.ObjectType):
     node = relay.Node.Field()
 
@@ -23,8 +29,15 @@ class Query(graphene.ObjectType):
 
     @staticmethod
     def resolve_restaurants(_root, _info, **kwargs):
-        """returns restaurants open at the given `open_at` time,"""
-        pass
+        """returns restaurants open at the given `open_at` time, and
+        restaurants that have number of dishes within a price range.
+        """
+        open_at = kwargs.get("open_at")
+
+        if open_at is not None:
+            return models.Restaurant.query_open_at(open_at)
+
+        return models.Restaurant.query.all()
 
 
 SCHEMA = graphene.Schema(query=Query)

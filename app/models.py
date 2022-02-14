@@ -11,6 +11,29 @@ class Restaurant(db.Model):
     schedule = db.relationship("Schedule", backref="restaurant", lazy="dynamic")
     dishes = db.relationship("Dish", backref="restaurant", lazy="dynamic")
 
+    @classmethod
+    def query_open_at(cls, open_at):
+        overnight = Schedule.overnight
+        O, C = Schedule.opens_at, Schedule.closes_at
+        OA = opens_at.time()
+
+        return cls.query.join(Schedule).filter(
+            (Schedule.weekday == open_at.weekday())
+            & (
+                (
+                    # If overnight is False, simply check if OA is in b/w O and C
+                    ((overnight == False) & ((O <= OA) & (C >= OA)))
+                )
+                | (
+                    # If overnight is true, then OA must lie in the shaded
+                    # areas:
+                    # 0            C                  O               23:59
+                    # +////////////^------------------^///////////////////+
+                    #              (OA < C) or (OA > O)
+                    ((overnight == True) & ((C >= OA) | (O <= OA)))
+                )
+            )
+        )
 
 class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)

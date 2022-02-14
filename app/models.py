@@ -10,7 +10,6 @@ class Restaurant(db.Model):
 
     schedule = db.relationship("Schedule", backref="restaurant", lazy="dynamic")
     dishes = db.relationship("Dish", backref="restaurant", lazy="dynamic")
-    purchase = db.relationship("PurchaseOrder", backref="restaurant", lazy="dynamic")
 
     def __repr__(self):
         return f"<Restaurant {self.name}, {self.cash_balance}>"
@@ -67,7 +66,6 @@ class PurchaseOrder(db.Model):
     transaction_amount = db.Column(db.Float, nullable=False)
     transaction_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     restaurant_name = db.Column(db.String(100), nullable=False)
-    restaurant_id = db.Column(db.Integer, db.ForeignKey("restaurant.id"))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
     __table_args__ = (

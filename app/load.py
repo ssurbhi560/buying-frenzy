@@ -134,11 +134,6 @@ def add_users(data):
                     order["transactionDate"], "%m/%d/%Y %H:%M %p"
                 ),
                 user_id=userdb.id,
-                restaurant_id=Restaurant.query.filter(
-                    Restaurant.name == order["restaurantName"]
-                )
-                .one()
-                .id,
             )
             for order in user["purchaseHistory"]
         ]

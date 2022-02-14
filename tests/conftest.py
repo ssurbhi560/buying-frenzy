@@ -1,7 +1,7 @@
 import pytest
 
 from app import app as flaskapp
-from app.models import Restaurant
+from app.models import Restaurant, User
 from app.models import db as maindb
 from tests.utils import commit
 
@@ -28,3 +28,10 @@ def restaurant(db):
     restaurant = Restaurant(name="test", cash_balance=0)
     commit(db, restaurant)
     return restaurant
+
+
+@pytest.fixture
+def user(db):
+    user = User(name="test", cash_balance=0)
+    commit(db, user)
+    return user

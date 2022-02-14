@@ -11,9 +11,6 @@ class Restaurant(db.Model):
     schedule = db.relationship("Schedule", backref="restaurant", lazy="dynamic")
     dishes = db.relationship("Dish", backref="restaurant", lazy="dynamic")
 
-    def __repr__(self):
-        return f"<Restaurant {self.name}, {self.cash_balance}>"
-
 
 class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -32,9 +29,6 @@ class Schedule(db.Model):
         db.CheckConstraint("-1 < weekday < 7", name="weekday_between_zero_to_six"),
     )
 
-    def __repr__(self):
-        return f"<Schedule {self.weekday}, {self.opens_at}, {self.closes_at}>"
-
 
 class Dish(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -46,18 +40,12 @@ class Dish(db.Model):
         db.CheckConstraint("price >= 0", name="price_of_dish_can_not_be_negative"),
     )
 
-    def __repr__(self):
-        return f"<Dish {self.name}, {self.price}>"
-
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     cash_balance = db.Column(db.Float, nullable=False)
     purchase = db.relationship("PurchaseOrder", backref="user", lazy="dynamic")
-
-    def __repr__(self):
-        return f"<User {self.name} {self.cash_balance}>"
 
 
 class PurchaseOrder(db.Model):
@@ -73,6 +61,3 @@ class PurchaseOrder(db.Model):
             "transaction_amount >= 0", name="transaction_amount_can_not_be_negative"
         ),
     )
-
-    def __repr__(self):
-        return f"<PurchaseOrder {self.dish_name} {self.transaction_amount}, {self.restaurant_name}>"

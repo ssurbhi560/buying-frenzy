@@ -8,14 +8,15 @@ class Restaurant(db.Model):
     name = db.Column(db.String(100), nullable=False)
     cash_balance = db.Column(db.Float, nullable=False)
 
-    schedule = db.relationship("Schedule", backref="restaurant", lazy="dynamic")
-    dishes = db.relationship("Dish", backref="restaurant", lazy="dynamic")
+    schedule = db.relationship("Schedule", backref="restaurant", lazy="dynamic", cascade="all, delete-orphan")
+    dishes = db.relationship("Dish", backref="restaurant", lazy="dynamic", cascade="all, delete-orphan")
+    purchase = db.relationship("PurchaseOrder", backref="restaurant", lazy="dynamic")
 
     @classmethod
     def query_open_at(cls, open_at):
         overnight = Schedule.overnight
         O, C = Schedule.opens_at, Schedule.closes_at
-        OA = opens_at.time()
+        OA = open_at.time()
 
         return cls.query.join(Schedule).filter(
             (Schedule.weekday == open_at.weekday())
@@ -34,6 +35,30 @@ class Restaurant(db.Model):
                 )
             )
         )
+
+    @classmethod
+    def query_within_range(cls, min_dish_price, max_dish_price, min_dishes, max_dishes):
+        
+
+        dishes_within_price_range = (
+            db.session.query(
+                Dish.restaurant_id, db.func.count(Dish.restaurant_id).label('cnt')
+            ).filter(
+                Dish.price <= max_dish_price, 
+                Dish.price >= min_dish_price
+            )
+            .group_by(Dish.restaurant_id)
+            .subquery()
+        )
+
+        if min_dishes is not None:
+            filter_arg = dishes_within_price_range.c.cnt >= min_dishes
+        if max_dishes is not None:
+            filter_arg = dishes_within_price_range.c.cnt <= max_dishes
+        
+        return cls.query.join(dishes_within_price_range).filter(filter_arg).all() 
+        
+
 
 class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -78,6 +103,7 @@ class PurchaseOrder(db.Model):
     transaction_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     restaurant_name = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    restaurant_id = db.Column(db.Integer, db.ForeignKey("restaurant.id"))
 
     __table_args__ = (
         db.CheckConstraint(

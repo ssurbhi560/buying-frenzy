@@ -1,0 +1,58 @@
+name: Buying Frenzy CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+
+    - name: Install poetry
+      uses: abatilo/actions-poetry@v2.0.0
+
+    - name: Set Poetry Config
+      run: |
+        poetry config virtualenvs.create true
+        poetry config cache-dir
+        poetry show -v
+
+    - uses: actions/cache@v2
+      name: Poetry Cache
+      with:
+        path: /home/runner/.cache/pypoetry/virtualenvs
+        key: cache-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          cache-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      run: |
+        poetry install
+
+    - name: Run tests
+      run: |
+        poetry run coverage run -m pytest
+
+    - name: Generate coverage report
+      run: poetry run coverage xml
+
+    - uses: codecov/codecov-action@v2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: coverage.xml
+        fail_ci_if_error: true
+
+    - name: Check for any pending style changes using black and isort.
+      run: |
+        poetry run black --check .
+        poetry run isort --check --diff .

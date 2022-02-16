@@ -63,7 +63,7 @@ class Restaurant(db.Model):
         if max_dishes is not None:
             filter_arg = dishes_within_price_range.c.cnt <= max_dishes
 
-        return cls.query.join(dishes_within_price_range).filter(filter_arg).all()
+        return cls.query.join(dishes_within_price_range).filter(filter_arg)
 
 
 class Schedule(db.Model):
@@ -86,7 +86,7 @@ class Schedule(db.Model):
 
 class Dish(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     restaurant_id = db.Column(db.Integer, db.ForeignKey("restaurant.id"))
 

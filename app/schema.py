@@ -20,17 +20,13 @@ class User(SQLAlchemyObjectType):
 class Query(graphene.ObjectType):
     node = relay.Node.Field()
 
-    restaraunts = SQLAlchemyConnectionField(
+    restaurants = SQLAlchemyConnectionField(
         Restaurant.connection,
         open_at=graphene.DateTime(
             description="datetime at which you want to filter the datetime"
         ),
-        min_price=graphene.Float(
-            description="Minimum price of the dish."
-        ),
-        max_price=graphene.Float(
-            description="Maximum price of the dish"
-        ),
+        min_dish_price=graphene.Float(description="Minimum price of the dish."),
+        max_dish_price=graphene.Float(description="Maximum price of the dish"),
         min_dishes=graphene.Int(
             description="if given number of dishes should be greater than `min_dishes`"
         ),
@@ -50,19 +46,21 @@ class Query(graphene.ObjectType):
         min_dish_price = kwargs.get("min_dish_price")
         max_dishes = kwargs.get("max_dishes") 
         min_dishes = kwargs.get("min_dishes")
-
         if min_dishes and max_dishes:
             raise ValueError("min_dish and max_dish should not be given together.")
         
 
         if open_at is not None:
             return models.Restaurant.query_open_at(open_at)
-        
-        if max_dish_price or min_dish_price:
-            assert max_dish_price and min_dish_price
-    
-        if max_dish_price is not None and min_dish_price is not None:
-            return models.Restaurant.query_within_range(max_dish_price, min_dish_price, max_dishes, min_dishes)
+
+        if max_dish_price is not None or min_dish_price is not None:
+            assert (
+                max_dish_price and min_dish_price
+            ), "Both 'min_dish_price' and 'max_dish_price' are required."
+
+            return models.Restaurant.query_within_range(
+                min_dish_price, max_dish_price, min_dishes, max_dishes
+            )
 
         return models.Restaurant.query.all()
 

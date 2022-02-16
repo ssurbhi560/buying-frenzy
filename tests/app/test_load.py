@@ -88,7 +88,6 @@ def test_add_restaurant(db):
 
 
 def test_add_users(db):
-
     data = [
         {
             "cashBalance": 700.7,
@@ -140,10 +139,20 @@ def test_add_users(db):
             ],
         },
     ]
+    for user in data:
+        for purchase in user["purchaseHistory"]:
+            restaurant = Restaurant(name=purchase["restaurantName"], cash_balance=0)
+            dish = Dish(name=purchase["dishName"], price=purchase["transactionAmount"])
+            db.session.add(restaurant)
+            db.session.add(dish)
+    db.session.commit()
 
     add_users(data)
+
     assert db.session.query(User).count() == 1
     user = User.query.one()
     assert (
-        user.purchase.count() == PurchaseOrder.query.count() == len(data[0]["purchaseHistory"])
+        user.purchase.count()
+        == PurchaseOrder.query.count()
+        == len(data[0]["purchaseHistory"])
     )

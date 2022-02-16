@@ -12,7 +12,9 @@ class Config(object):
 
 class TestConfig(object):
     TESTING = True
-    DEBUG = True
+    # DEBUG=True causes pytest to fail.
+    # See: https://github.com/ga4gh/ga4gh-server/issues/791
+    DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "TEST_DATABASE_URL"
     ) or "sqlite:///" + os.path.join(basedir, "test.db")

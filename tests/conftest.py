@@ -6,7 +6,7 @@ from app.models import db as maindb
 from tests.utils import commit
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def app():
     flaskapp.config.from_object("config.TestConfig")
     flaskapp.testing = True
@@ -14,7 +14,7 @@ def app():
     return flaskapp
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def db(app):
     maindb.init_app(app)
     with app.app_context():

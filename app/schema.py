@@ -65,17 +65,16 @@ class Query(graphene.ObjectType):
         min_dish_price = kwargs.get("min_dish_price")
         max_dishes = kwargs.get("max_dishes")
         min_dishes = kwargs.get("min_dishes")
-        if min_dishes and max_dishes:
-            raise ValueError("min_dish and max_dish should not be given together.")
 
         if open_at is not None:
             return models.Restaurant.query_open_at(open_at)
 
-        if max_dish_price is not None or min_dish_price is not None:
-            assert (
-                max_dish_price and min_dish_price
-            ), "Both 'min_dish_price' and 'max_dish_price' are required."
-
+        if (
+            min_dish_price is not None
+            or max_dish_price is not None
+            or min_dishes is not None
+            or max_dishes is not None
+        ):
             return models.Restaurant.query_within_range(
                 min_dish_price, max_dish_price, min_dishes, max_dishes
             )
@@ -102,30 +101,21 @@ class Purchase(graphene.Mutation):
         input = PurchaseInput(required=True)
 
     def mutate(self, info, input):
-        data = utils.input_to_dictionary(input)
+        try:
+            data = utils.input_to_dictionary(input)
+        except UnicodeDecodeError as e:
+            raise ValueError("invalid dish/user id.") from e
+
         user_id = data["user_id"]
         dish_id = data["dish_id"]
         user = models.User.query.get(user_id)
         dish = models.Dish.query.get(dish_id)
-        restaurant = dish.restaurant
 
-        if user.cash_balance < dish.price:
-            raise ValueError("Purchase not allowed: Not enough cash balance!")
+        if user is None or dish is None:
+            raise ValueError("invalid dish/user id.")
 
-        order = models.PurchaseOrder(
-            dish_name=dish.name,
-            transaction_amount=dish.price,
-            restaurant_name=restaurant.name,
-            user_id=user.id,
-            restaurant_id=restaurant.id,
-        )
+        order = models.PurchaseOrder.create_for(user, dish)
 
-        user.cash_balance -= dish.price
-        restaurant.cash_balance += dish.price
-        models.db.session.add(user)
-        models.db.session.add(order)
-        models.db.session.add(restaurant)
-        models.db.session.commit()
         return Purchase(order=order)
 
 

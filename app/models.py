@@ -42,6 +42,20 @@ class Restaurant(db.Model):
 
     @classmethod
     def query_within_range(cls, min_dish_price, max_dish_price, min_dishes, max_dishes):
+        if not (min_dishes or max_dishes):
+            raise ValueError("Specify one of 'minDishes' or 'maxDishes'")
+
+        if min_dishes is not None and max_dishes is not None:
+            raise ValueError(
+                "'minDishes' and 'maxDishes' should not be given together."
+            )
+
+        if not (min_dish_price and max_dish_price):
+            raise ValueError("Both 'minDishPrice' and 'maxDishPrice' are required.")
+
+        if min_dish_price > max_dish_price:
+            raise ValueError("'minDishPrice' cannot be greater than 'maxDishPrice'.")
+
         dishes_within_price_range = (
             db.session.query(
                 Dish.restaurant_id, db.func.count(Dish.restaurant_id).label("cnt")
@@ -115,3 +129,25 @@ class PurchaseOrder(db.Model):
             "transaction_amount >= 0", name="transaction_amount_can_not_be_negative"
         ),
     )
+
+    @classmethod
+    def create_for(cls, user, dish):
+        if user.cash_balance < dish.price:
+            raise ValueError("Purchase not allowed: Not enough cash balance!")
+        restaurant = dish.restaurant
+        order = PurchaseOrder(
+            dish_name=dish.name,
+            transaction_amount=dish.price,
+            restaurant_name=restaurant.name,
+            user_id=user.id,
+            restaurant_id=restaurant.id,
+        )
+
+        user.cash_balance -= dish.price
+        restaurant.cash_balance += dish.price
+        db.session.add(user)
+        db.session.add(order)
+        db.session.add(restaurant)
+        db.session.commit()
+
+        return order

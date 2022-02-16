@@ -8,6 +8,7 @@ from flask import url_for
 from graphql_relay.node.node import to_global_id
 
 from app import models, schema
+from tests.utils import commit
 
 
 @pytest.fixture
@@ -70,8 +71,29 @@ def test_purchase_mutation(db, execute, restaurant, user):
     assert order["userId"] == user.id == r_order.user_id
     assert order["id"] == to_global_id(id=r_order.id, type="PurchaseOrder")
 
+    # User's cash balance is now zero; they shouldn't be able to make a purchase.
+    data = execute(mutation)
+    assert len(data["errors"]) == 1
+    assert "Purchase not allowed" in data["errors"][0]["message"]
 
-def test_restaurant_open_at(db, execute, restaurant):
+
+def test_user_query_all(user, execute):
+    query = "query { users { edges { node { name } } } }"
+    data = execute(query)
+    assert data["data"]["users"]["edges"] == [{"node": {"name": user.name}}]
+
+
+def test_restaurant_query_all(restaurant, execute):
+    query = "query { restaurants { edges { node { name } } } }"
+    data = execute(query)
+    assert data["data"]["restaurants"]["edges"] == [{"node": {"name": restaurant.name}}]
+
+
+def test_restaurant_open_at(db, execute):
+    restaurant = models.Restaurant(name="Test", cash_balance=100)
+    db.session.add(restaurant)
+    db.session.commit()
+
     monday = models.Schedule(
         opens_at=t(14, 0),
         closes_at=t(21, 0),
@@ -151,3 +173,89 @@ def test_restaurant_open_at(db, execute, restaurant):
             expected_edges = [{"node": {"name": restaurant.name}}]
         data = execute(query % dt_fri.isoformat())
         assert data["data"]["restaurants"]["edges"] == expected_edges
+
+
+def test_restaurant_query_within_range_not_specified(execute):
+    query = "query { restaurants(minDishPrice: 10, minDishes:5) { edges { node { name } } } }"
+    data = execute(query)
+    assert len(data["errors"]) == 1
+    assert "Both 'minDishPrice' and 'maxDishPrice'" in data["errors"][0]["message"]
+
+
+def test_restaurant_query_within_range_both_min_dishes_and_max_dishes(execute):
+    query = (
+        "query { restaurants(minDishes:5, maxDishes:6) { edges { node { name } } } }"
+    )
+    data = execute(query)
+    assert len(data["errors"]) == 1
+    expected_error_message = "'minDishes' and 'maxDishes' should not be given together"
+    assert expected_error_message in data["errors"][0]["message"]
+
+
+def test_restaurant_query_min_dish_price_lt_max_dish_price(execute):
+    query = "query { restaurants(minDishes: 1, minDishPrice:10, maxDishPrice:1) { edges { node { name } } } }"
+    data = execute(query)
+    assert len(data["errors"]) == 1
+    assert "cannot be greater" in data["errors"][0]["message"]
+
+
+def test_restaurant_query_no_min_or_max_dishes(execute):
+    query = "query { restaurants(minDishPrice:10, maxDishPrice:12) { edges { node { name } } } }"
+    data = execute(query)
+    assert len(data["errors"]) == 1
+    assert "Specify one of 'minDishes' or 'maxDishes'" in data["errors"][0]["message"]
+
+
+def test_dishes_within_price_range(db, execute):
+    rest1 = models.Restaurant(name="Egg Palace", cash_balance=1)
+    rest2 = models.Restaurant(name="Egg Japanese Style", cash_balance=1)
+    rest3 = models.Restaurant(name="Anda Palace", cash_balance=1)
+    for rest in [rest1, rest2, rest3]:
+        commit(db, rest)
+
+    for i in range(1, 15):
+        dish = models.Dish(name=f"Egg curry {i}", price=i, restaurant_id=rest1.id)
+        commit(db, dish)
+
+    query = """
+        query {
+            restaurants(%s) {
+                edges {
+                    node {
+                        name
+                    }
+                }
+            }
+        }
+    """
+    data = execute(query % "minDishes:1, minDishPrice:1, maxDishPrice:15")
+    # Only rest1 should be returned.
+    restaurants = data["data"]["restaurants"]["edges"]
+    assert len(restaurants) == 1
+    assert restaurants[0]["node"]["name"] == rest1.name
+
+    dish = models.Dish(name="Egg Curry 2", price=5, restaurant_id=rest3.id)
+    commit(db, dish)
+
+    data = execute(query % "minDishes:1, minDishPrice:1, maxDishPrice:15")
+    restaurants = data["data"]["restaurants"]["edges"]
+    assert len(restaurants) == 2
+    assert restaurants[0]["node"]["name"] == rest1.name
+    assert restaurants[1]["node"]["name"] == rest3.name
+
+    data = execute(query % "maxDishes:2, minDishPrice:1, maxDishPrice:15")
+    restaurants = data["data"]["restaurants"]["edges"]
+    assert len(restaurants) == 1
+    assert restaurants[0]["node"]["name"] == rest3.name
+
+    data = execute(query % "minDishes:1, minDishPrice:50, maxDishPrice:100")
+    restaurants = data["data"]["restaurants"]["edges"]
+    assert len(restaurants) == 0
+
+    dish = models.Dish(name="Expensive Egg Curry", price=100, restaurant_id=rest2.id)
+    commit(db, dish)
+
+    data = execute(query % "minDishes:1, minDishPrice:50, maxDishPrice:100")
+    restaurants = data["data"]["restaurants"]["edges"]
+    assert len(restaurants) == 1
+    assert restaurants[0]["node"]["name"] == rest2.name

@@ -8,9 +8,19 @@ class Restaurant(db.Model):
     name = db.Column(db.String(100), nullable=False)
     cash_balance = db.Column(db.Float, nullable=False)
 
-    schedule = db.relationship("Schedule", backref="restaurant", lazy="dynamic", cascade="all, delete-orphan")
-    dishes = db.relationship("Dish", backref="restaurant", lazy="dynamic", cascade="all, delete-orphan")
+    schedule = db.relationship(
+        "Schedule", backref="restaurant", lazy="dynamic", cascade="all, delete-orphan"
+    )
+    dishes = db.relationship(
+        "Dish", backref="restaurant", lazy="dynamic", cascade="all, delete-orphan"
+    )
     purchase = db.relationship("PurchaseOrder", backref="restaurant", lazy="dynamic")
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "cash_balance > 0", name="cash_balance_is_always_positive_float_number"
+        ),
+    )
 
     @classmethod
     def query_open_at(cls, open_at):
@@ -38,15 +48,12 @@ class Restaurant(db.Model):
 
     @classmethod
     def query_within_range(cls, min_dish_price, max_dish_price, min_dishes, max_dishes):
-        
 
         dishes_within_price_range = (
             db.session.query(
-                Dish.restaurant_id, db.func.count(Dish.restaurant_id).label('cnt')
-            ).filter(
-                Dish.price <= max_dish_price, 
-                Dish.price >= min_dish_price
+                Dish.restaurant_id, db.func.count(Dish.restaurant_id).label("cnt")
             )
+            .filter(Dish.price <= max_dish_price, Dish.price >= min_dish_price)
             .group_by(Dish.restaurant_id)
             .subquery()
         )
@@ -55,9 +62,8 @@ class Restaurant(db.Model):
             filter_arg = dishes_within_price_range.c.cnt >= min_dishes
         if max_dishes is not None:
             filter_arg = dishes_within_price_range.c.cnt <= max_dishes
-        
-        return cls.query.join(dishes_within_price_range).filter(filter_arg).all() 
-        
+
+        return cls.query.join(dishes_within_price_range).filter(filter_arg).all()
 
 
 class Schedule(db.Model):
@@ -94,6 +100,12 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     cash_balance = db.Column(db.Float, nullable=False)
     purchase = db.relationship("PurchaseOrder", backref="user", lazy="dynamic")
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "cash_balance > 0", name="cash_balance_is_always_positive_float_number"
+        ),
+    )
 
 
 class PurchaseOrder(db.Model):

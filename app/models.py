@@ -18,7 +18,7 @@ class Restaurant(db.Model):
 
     __table_args__ = (
         db.CheckConstraint(
-            "cash_balance > 0", name="cash_balance_is_always_positive_float_number"
+            "cash_balance >= 0", name="cash_balance_is_always_positive_float_number"
         ),
     )
 
@@ -103,7 +103,7 @@ class User(db.Model):
 
     __table_args__ = (
         db.CheckConstraint(
-            "cash_balance > 0", name="cash_balance_is_always_positive_float_number"
+            "cash_balance >= 0", name="cash_balance_is_always_positive_float_number"
         ),
     )
 

@@ -42,7 +42,6 @@ class Restaurant(db.Model):
 
     @classmethod
     def query_within_range(cls, min_dish_price, max_dish_price, min_dishes, max_dishes):
-
         dishes_within_price_range = (
             db.session.query(
                 Dish.restaurant_id, db.func.count(Dish.restaurant_id).label("cnt")

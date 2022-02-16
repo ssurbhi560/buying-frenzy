@@ -11,16 +11,10 @@ class Restaurant(db.Model):
     schedule = db.relationship(
         "Schedule", backref="restaurant", lazy="dynamic", cascade="all, delete-orphan"
     )
-    dishes = db.relationship(
-        "Dish", backref="restaurant", lazy="dynamic", cascade="all, delete-orphan"
-    )
+    dishes = db.relationship("Dish", backref="restaurant", lazy="dynamic")
     purchase = db.relationship("PurchaseOrder", backref="restaurant", lazy="dynamic")
 
-    __table_args__ = (
-        db.CheckConstraint(
-            "cash_balance >= 0", name="cash_balance_is_always_positive_float_number"
-        ),
-    )
+    __table_args__ = (db.CheckConstraint("cash_balance>=0"),)
 
     @classmethod
     def query_open_at(cls, open_at):

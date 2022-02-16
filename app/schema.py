@@ -2,7 +2,7 @@ import graphene
 from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 
-from app import models
+from app import models, utils
 
 
 class Restaurant(SQLAlchemyObjectType):
@@ -14,6 +14,18 @@ class Restaurant(SQLAlchemyObjectType):
 class User(SQLAlchemyObjectType):
     class Meta:
         model = models.User
+        interfaces = (relay.Node,)
+
+
+class PurchaseOrder(SQLAlchemyObjectType):
+    class Meta:
+        model = models.PurchaseOrder
+        interfaces = (relay.Node,)
+
+
+class Dish(SQLAlchemyObjectType):
+    class Meta:
+        model = models.Dish
         interfaces = (relay.Node,)
 
 
@@ -34,6 +46,13 @@ class Query(graphene.ObjectType):
             description="if given number of dishes should be less than"
         ),
     )
+
+    users = SQLAlchemyConnectionField(
+        User.connection,
+    )
+
+    def resolve_users(self, _info, **kwargs):
+        return models.User.query.all()
 
     @staticmethod
     def resolve_restaurants(_root, _info, **kwargs):
@@ -64,4 +83,58 @@ class Query(graphene.ObjectType):
         return models.Restaurant.query.all()
 
 
-SCHEMA = graphene.Schema(query=Query)
+class PurchaseInput(graphene.InputObjectType):
+    """Arguments to ceate a new purchase order"""
+
+    user_id = graphene.ID(description="ID of the user who is making the purchase.")
+    dish_id = graphene.ID(description="ID of the dish purchased by the user.")
+
+
+class Purchase(graphene.Mutation):
+    """
+    Mutation to add a new purchase order."""
+
+    purchase = graphene.Field(
+        lambda: PurchaseOrder, description="The newly created purchase order"
+    )
+
+    class Arguments:
+        input = PurchaseInput(required=True)
+
+    def mutate(self, info, input):
+        data = utils.input_to_dictionary(input)
+        user_id = data["user_id"]
+        dish_id = data["dish_id"]
+        user = models.User.query.get(user_id)
+        dish = models.Dish.query.get(dish_id)
+
+        restaurant = dish.restaurant
+
+        purchase = models.PurchaseOrder(
+            dish_name=dish.name,
+            transaction_amount=dish.price,
+            restaurant_name=restaurant.name,
+            user_id=user.id,
+            restaurant_id=restaurant.id,
+        )
+        user.cash_balance -= dish.price
+        restaurant.cash_balance += dish.price
+
+        if (user.cash_balance >= 0) and (restaurant.cash_balance >= 0):
+
+            models.db.session.add(user)
+            models.db.session.add(purchase)
+            models.db.session.add(restaurant)
+            models.db.session.commit()
+        else:
+            models.db.session.rollback()
+            raise ValueError("Invalid purchase! Cash balance can not be less than zero")
+
+        return Purchase(purchase=purchase)
+
+
+class Mutation(graphene.ObjectType):
+    purchase = Purchase.Field()
+
+
+SCHEMA = graphene.Schema(query=Query, mutation=Mutation)

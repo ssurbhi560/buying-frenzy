@@ -19,8 +19,6 @@ ENV PATH="$POETRY_HOME/bin:$PATH"
 
 WORKDIR /app
 
-RUN python -m venv venv
-
 # Install dependencies
 COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-dev --no-interaction

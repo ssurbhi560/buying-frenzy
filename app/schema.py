@@ -101,12 +101,18 @@ class Purchase(graphene.Mutation):
         input = PurchaseInput(required=True)
 
     def mutate(self, info, input):
-        data = utils.input_to_dictionary(input)
-        # TODO: Validate user_id and dish_id exist.
+        try:
+            data = utils.input_to_dictionary(input)
+        except UnicodeDecodeError as e:
+            raise ValueError("invalid dish/user id.") from e
+
         user_id = data["user_id"]
         dish_id = data["dish_id"]
         user = models.User.query.get(user_id)
         dish = models.Dish.query.get(dish_id)
+
+        if user is None or dish is None:
+            raise ValueError("invalid dish/user id.")
 
         order = models.PurchaseOrder.create_for(user, dish)
 

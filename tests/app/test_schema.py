@@ -1,3 +1,4 @@
+import base64
 import json
 from datetime import datetime
 from datetime import time as t
@@ -75,6 +76,19 @@ def test_purchase_mutation(db, execute, restaurant, user):
     data = execute(mutation)
     assert len(data["errors"]) == 1
     assert "Purchase not allowed" in data["errors"][0]["message"]
+
+
+def test_purchase_invalid_user_id(execute, db):
+    mutation = 'mutation { purchase(input: {userId:"%s", dishId:"%s"}) { order { dishName } } } '
+    data = execute(mutation % ("abcd", "efgh"))
+    assert len(data["errors"]) == 1
+    assert "invalid dish/user id" in data["errors"][0]["message"]
+
+    # In case graphql ids are valid base64; ensure that an error is still returned.
+    invalid_user_id = base64.b64encode("User:42".encode()).decode()
+    invalid_dish_id = base64.b64encode("Dish:50".encode()).decode()
+    data = execute(mutation % (invalid_user_id, invalid_dish_id))
+    assert "invalid dish/user id" in data["errors"][0]["message"]
 
 
 def test_user_query_all(user, execute):

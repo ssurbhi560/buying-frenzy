@@ -84,7 +84,7 @@ class Query(graphene.ObjectType):
 
 
 class PurchaseInput(graphene.InputObjectType):
-    """Arguments to ceate a new purchase order"""
+    """Arguments to ceate a new purchase order."""
 
     user_id = graphene.ID(description="ID of the user who is making the purchase.")
     dish_id = graphene.ID(description="ID of the dish purchased by the user.")
@@ -94,8 +94,8 @@ class Purchase(graphene.Mutation):
     """
     Mutation to add a new purchase order."""
 
-    purchase = graphene.Field(
-        lambda: PurchaseOrder, description="The newly created purchase order"
+    order = graphene.Field(
+        lambda: PurchaseOrder, description="The newly created purchase order."
     )
 
     class Arguments:
@@ -107,30 +107,26 @@ class Purchase(graphene.Mutation):
         dish_id = data["dish_id"]
         user = models.User.query.get(user_id)
         dish = models.Dish.query.get(dish_id)
-
         restaurant = dish.restaurant
 
-        purchase = models.PurchaseOrder(
+        if user.cash_balance < dish.price:
+            raise ValueError("Purchase not allowed: Not enough cash balance!")
+
+        order = models.PurchaseOrder(
             dish_name=dish.name,
             transaction_amount=dish.price,
             restaurant_name=restaurant.name,
             user_id=user.id,
             restaurant_id=restaurant.id,
         )
+
         user.cash_balance -= dish.price
         restaurant.cash_balance += dish.price
-
-        if (user.cash_balance >= 0) and (restaurant.cash_balance >= 0):
-
-            models.db.session.add(user)
-            models.db.session.add(purchase)
-            models.db.session.add(restaurant)
-            models.db.session.commit()
-        else:
-            models.db.session.rollback()
-            raise ValueError("Invalid purchase! Cash balance can not be less than zero")
-
-        return Purchase(purchase=purchase)
+        models.db.session.add(user)
+        models.db.session.add(order)
+        models.db.session.add(restaurant)
+        models.db.session.commit()
+        return Purchase(order=order)
 
 
 class Mutation(graphene.ObjectType):

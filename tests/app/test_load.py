@@ -87,6 +87,7 @@ def test_add_restaurant(db):
         assert sch.overnight == overnight
 
 
+# TODO: fix this test.
 def test_add_users(db):
 
     data = [
@@ -145,5 +146,7 @@ def test_add_users(db):
     assert db.session.query(User).count() == 1
     user = User.query.one()
     assert (
-        user.purchase.count() == PurchaseOrder.query.count() == len(data[0]["purchaseHistory"])
+        user.purchase.count()
+        == PurchaseOrder.query.count()
+        == len(data[0]["purchaseHistory"])
     )

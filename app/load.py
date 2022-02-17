@@ -182,3 +182,7 @@ def add_restaurants(data):
 
         db.session.bulk_save_objects(schedule_db)
     db.session.commit()
+
+    # Index the newly created data with elasticsearch.
+    Restaurant.reindex()
+    Dish.reindex()

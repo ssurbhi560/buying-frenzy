@@ -126,7 +126,7 @@ $ docker exec frenzy flask seed-db
     ```graphql
     query {
         search(q:"Surbhi") {  # Shows results for 'Sushi' xD
-            ... on Restaurants {
+            ... on Restaurant {
                 id
                 name
                 cashBalance

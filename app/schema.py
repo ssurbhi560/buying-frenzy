@@ -29,6 +29,11 @@ class Dish(SQLAlchemyObjectType):
         interfaces = (relay.Node,)
 
 
+class SearchResult(graphene.Union):
+    class Meta:
+        types = (Restaurant, Dish)
+
+
 class Query(graphene.ObjectType):
     node = relay.Node.Field()
 
@@ -50,6 +55,8 @@ class Query(graphene.ObjectType):
     users = SQLAlchemyConnectionField(
         User.connection,
     )
+
+    search = graphene.List(SearchResult, q=graphene.String())
 
     def resolve_users(self, _info, **kwargs):
         return models.User.query.all()
@@ -80,6 +87,12 @@ class Query(graphene.ObjectType):
             )
 
         return models.Restaurant.query.all()
+
+    def resolve_search(self, info, **args):
+        q = args.get("q")
+        restaurants = models.Restaurant.search("name", q)
+        dishes = models.Dish.search("name", q)
+        return restaurants + dishes
 
 
 class PurchaseInput(graphene.InputObjectType):

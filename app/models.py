@@ -1,9 +1,10 @@
 from datetime import datetime
 
 from app import db
+from app.mixins import SearchableMixin
 
 
-class Restaurant(db.Model):
+class Restaurant(SearchableMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     cash_balance = db.Column(db.Float, nullable=False)
@@ -15,6 +16,7 @@ class Restaurant(db.Model):
     purchase = db.relationship("PurchaseOrder", backref="restaurant", lazy="dynamic")
 
     __table_args__ = (db.CheckConstraint("cash_balance>=0"),)
+    __searchable__ = ("name",)
 
     @classmethod
     def query_open_at(cls, open_at):
@@ -91,7 +93,7 @@ class Schedule(db.Model):
     )
 
 
-class Dish(db.Model):
+class Dish(SearchableMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -100,6 +102,7 @@ class Dish(db.Model):
     __table_args__ = (
         db.CheckConstraint("price >= 0", name="price_of_dish_can_not_be_negative"),
     )
+    __searchable__ = ("name",)
 
 
 class User(db.Model):

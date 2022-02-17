@@ -19,7 +19,7 @@ Using Docker :
 
 ```shell
 $ docker pull ssurbhi560/frenzy:<TAG>
-$ docker run -p 5000:5000 -d --rm ssurbhi560/frenzy:<TAG> --name frenzy
+$ docker run -p 5000:5000 -d --rm ssurbhi560/frenzy:<TAG> -e "ELASTICSEARCH_URL=<ELASTICSEARCH_URL>" -e "SECRET_KEY=<SECRET_KEY>" --name frenzy
 ```
 
 This should start a server at http://localhost:5000/graphql.
@@ -122,6 +122,23 @@ $ docker exec frenzy flask seed-db
     }
     ```
     Note that specifying both `maxDishes` and `minDishes` arguments will result in an error. Similarly, not specifying any one of `minDishPrice` or `maxDishPrice` will also raise an error.
+1. To search for a restaraunt/dish, pass the `q` argument to `search` query. It returns a `SearchResult` type which is a `Union` of `Restarunt` and `Dish` types: therefore, fragments are required for making conditional selections. The search is fuzzy, and can automatically detect typos/related words, e.g. searching for `Surbhi` also shows results for `Sushi`:
+    ```graphql
+    query {
+        search(q:"Surbhi") {  # Shows results for 'Sushi' xD
+            ... on Restaurants {
+                id
+                name
+                cashBalance
+            }
+            ... on Dish {
+                id
+                name
+                price
+            }
+        }
+    }
+    ```
 1. Process a user purchasing a dish from a restaurant:
     ```graphql
     mutation {

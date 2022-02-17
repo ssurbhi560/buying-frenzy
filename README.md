@@ -73,7 +73,7 @@ $ docker exec frenzy flask seed-db
     query {
         restaurants(openAt:"2022-02-20T21:03:00.00765") {
             edges {
-            node {
+                node {
                     name
                     cashBalance
                 }

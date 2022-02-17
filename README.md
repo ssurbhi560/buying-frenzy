@@ -122,7 +122,7 @@ $ docker exec frenzy flask seed-db
     }
     ```
     Note that specifying both `maxDishes` and `minDishes` arguments will result in an error. Similarly, not specifying any one of `minDishPrice` or `maxDishPrice` will also raise an error.
-1. To search for a restaraunt/dish, pass the `q` argument to `search` query. It returns a `SearchResult` type which is a `Union` of `Restarunt` and `Dish` types: therefore, fragments are required for making conditional selections. The search is fuzzy, and can automatically detect typos/related words, e.g. searching for `Surbhi` also shows results for `Sushi`:
+1. To search for a restaurant/dish, pass the `q` argument to `search` query. It returns a `SearchResult` type which is a `Union` of `Restaurant` and `Dish` types: therefore, fragments are required for making conditional selections. The search is fuzzy, and can automatically detect typos/related words, e.g. searching for `Surbhi` also shows results for `Sushi`:
     ```graphql
     query {
         search(q:"Surbhi") {  # Shows results for 'Sushi' xD
@@ -142,20 +142,20 @@ $ docker exec frenzy flask seed-db
 1. Process a user purchasing a dish from a restaurant:
     ```graphql
     mutation {
-    purchase(input: {userId: "VXNlcjox", dishId: "RGlzaDoz"}) {
-        order {
-            id
-            dishName
-            transactionAmount
-            transactionDate
-            restaurantName
-            userId
-            restaurantId
+        purchase(input: {userId: "VXNlcjox", dishId: "RGlzaDoz"}) {
+            order {
+                id
+                dishName
+                transactionAmount
+                transactionDate
+                restaurantName
+                userId
+                restaurantId
             }
         }
     }
     ```
-    The `ID` of the correspodning dish/user may be found by selecting them:
+    The `ID` of the corresponding dish/user may be found by selecting them:
     ```graphql
     query {
         # Get id of all users.

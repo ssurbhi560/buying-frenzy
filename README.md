@@ -156,7 +156,7 @@ $ docker exec frenzy flask seed-db
     }
     ```
     The `ID` of the correspodning dish/user may be found by selecting them:
-    ```
+    ```graphql
     query {
         # Get id of all users.
         users {

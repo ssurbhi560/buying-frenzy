@@ -7,8 +7,6 @@
 
 > GraphQL Backend for a food delivery platform.
 
-A demo backend server (with GraphiQL) is available to play with at [https://frenzy.tk/](https://frenzy.tk/).
-
 ## Usage
 ```shell
 $ poetry install

@@ -1,10 +1,9 @@
 from datetime import datetime
 
 from app import db
-from app.mixins import SearchableMixin
 
 
-class Restaurant(SearchableMixin, db.Model):
+class Restaurant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     cash_balance = db.Column(db.Float, nullable=False)
@@ -93,7 +92,7 @@ class Schedule(db.Model):
     )
 
 
-class Dish(SearchableMixin, db.Model):
+class Dish(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)

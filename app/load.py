@@ -182,4 +182,3 @@ def add_restaurants(data):
 
         db.session.bulk_save_objects(schedule_db)
     db.session.commit()
-
